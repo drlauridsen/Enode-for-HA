@@ -8,9 +8,9 @@ The initial setup described by oldsmurf56 is basically the same, I have however 
 
 
 Enode setup
-1) Create an enode account
+1) Create an enode account.
 2) Ask sales for production access (you can test the integration with the sandbox environment by changing the environment in const.py to "sandbox", until you get production access)
-3) Have your enode credentials ready, and use either the instructions here https://developers.enode.com/docs/getting-started or use my simplified process here https://lauridsen.nl/enode/enodelink.php to get the link to the linksession between your vehicles app account and enode.
+3) Have your enode credentials ready, and use either the instructions here https://developers.enode.com/docs/getting-started or use my simplified process here https://lauridsen.nl/enode/enodelink.php to get the link to the linksession between your vehicles app account and enode. The php file is also uploaded here, so that you see the code, and can use it in your own webserver if you prefer.
 4) Use the generated url to link your vehicle to enode within 24 hours.
 
 How to install the custom integration in homeassistant
