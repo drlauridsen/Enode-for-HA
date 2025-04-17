@@ -1,0 +1,51 @@
+{
+    "config": {
+        "step": {
+            "user": {
+                "title": "Enode-forbindelse",
+                "description": "Konfigurer din Enode-integration.",
+                "data": {
+                    "client_id": "Klient-ID",
+                    "client_secret": "Klienthemmelighed"
+                }
+            },
+            "vehicle": {
+                "title": "Vælg køretøj",
+                "description": "Vælg hvilket køretøj der skal tilføjes.",
+                "data": {
+                    "vehicle_id": "Køretøj"
+                }
+            },
+            "interval": {
+                "title": "Opdateringsinterval",
+                "description": "Opdateringsinterval i sekunder. Styrer hvor ofte integrationen henter nye data.\n\nMinimum: {min_value}\nMaksimum: {max_value}\nStandard: {default_value}\nAnbefalet: {recommended_value} (5 minutter)\n\nBemærk: Ændringer kræver genindlæsning af integrationen:\n1. Gem denne konfiguration\n2. Gå tilbage til Integrationer\n3. Find Enode-integrationen\n4. Klik på ⋮ (tre-prikkers menu)\n5. Vælg \"Genindlæs\"\n\nTip: For hyppige opdateringer kan medføre API-begrænsninger.",
+                "data": {
+                    "update_interval": "Opdateringsinterval (sekunder)"
+                }
+            }
+        },
+        "error": {
+            "invalid_auth": "Ugyldig godkendelse",
+            "unknown": "Uventet fejl opstod"
+        },
+        "abort": {
+            "no_vehicles": "Ingen køretøjer fundet i kontoen",
+            "no_vehicles_available": "Ingen ukonfigurerede køretøjer tilgængelige"
+        }
+    },
+    "options": {
+        "step": {
+            "init": {
+                "title": "Opdateringsinterval",
+                "description": "Opdateringsinterval i sekunder. Styrer hvor ofte integrationen henter nye data.\n\nMinimum: {min_value}\nMaksimum: {max_value}\nStandard: {default_value}\nAnbefalet: {recommended_value} (5 minutter)\n\nBemærk: Ændringer kræver genindlæsning af integrationen:\n1. Gem denne konfiguration\n2. Gå tilbage til Integrationer\n3. Find Enode-integrationen\n4. Klik på ⋮ (tre-prikkers menu)\n5. Vælg \"Genindlæs\"\n\nTip: For hyppige opdateringer kan medføre API-begrænsninger.",
+                "data": {
+                    "update_interval": "Opdateringsinterval (sekunder)"
+                }
+            }
+        },
+        "error": {
+            "invalid_update_interval": "Opdateringsintervallet skal være mellem minimum- og maksimumværdierne",
+            "unknown": "Uventet fejl opstod"
+        }
+    }
+}
