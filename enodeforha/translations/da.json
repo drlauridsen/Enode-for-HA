@@ -11,41 +11,61 @@
             },
             "vehicle": {
                 "title": "Vælg køretøj",
-                "description": "Vælg hvilket køretøj der skal tilføjes.",
+                "description": "Vælg hvilket køretøj der skal tilføjes. Allerede konfigurerede køretøjer vises ikke.",
                 "data": {
                     "vehicle_id": "Køretøj"
                 }
             },
             "interval": {
-                "title": "Opdateringsinterval",
-                "description": "Opdateringsinterval i sekunder. Styrer hvor ofte integrationen henter nye data.\n\nMinimum: {min_value}\nMaksimum: {max_value}\nStandard: {default_value}\nAnbefalet: {recommended_value} (5 minutter)\n\nBemærk: Ændringer kræver genindlæsning af integrationen:\n1. Gem denne konfiguration\n2. Gå tilbage til Integrationer\n3. Find Enode-integrationen\n4. Klik på ⋮ (tre-prikkers menu)\n5. Vælg \"Genindlæs\"\n\nTip: For hyppige opdateringer kan medføre API-begrænsninger.",
+                "title": "Opdateringsindstillinger",
+                "description": "Konfigurer hvor ofte integrationen skal opdatere data og fejlfindingsindstillinger.\n\n**Opdateringsinterval:**\n- Minimum: {min_value} sekunder\n- Maksimum: {max_value} sekunder\n- Standard: {default_value} sekunder\n\n**Fejlfindingsnotifikationer:**\n{debug_help}",
                 "data": {
-                    "update_interval": "Opdateringsinterval (sekunder)"
+                    "update_interval": "Opdateringsinterval (sekunder)",
+                    "debug_notifications": "Aktiver fejlfindingsnotifikationer"
                 }
             }
         },
         "error": {
             "invalid_auth": "Ugyldig godkendelse",
-            "unknown": "Uventet fejl opstod"
+            "unknown": "Uventet fejl opstod",
+            "invalid_update_interval": "Ugyldigt interval - skal være mellem {min_value} og {max_value} sekunder"
         },
         "abort": {
             "no_vehicles": "Ingen køretøjer fundet i kontoen",
-            "no_vehicles_available": "Ingen ukonfigurerede køretøjer tilgængelige"
+            "no_vehicles_available": "Ingen flere køretøjer tilgængelige (alle er allerede konfigureret)",
+            "already_configured": "Dette køretøj er allerede konfigureret"
         }
     },
     "options": {
         "step": {
             "init": {
-                "title": "Opdateringsinterval",
-                "description": "Opdateringsinterval i sekunder. Styrer hvor ofte integrationen henter nye data.\n\nMinimum: {min_value}\nMaksimum: {max_value}\nStandard: {default_value}\nAnbefalet: {recommended_value} (5 minutter)\n\nBemærk: Ændringer kræver genindlæsning af integrationen:\n1. Gem denne konfiguration\n2. Gå tilbage til Integrationer\n3. Find Enode-integrationen\n4. Klik på ⋮ (tre-prikkers menu)\n5. Vælg \"Genindlæs\"\n\nTip: For hyppige opdateringer kan medføre API-begrænsninger.",
+                "title": "Enode-indstillinger",
+                "description": "Justér opdateringsfrekvens og fejlfindingsindstillinger.\n\n**Opdateringsinterval:**\n- Minimum: {min_value} sekunder\n- Maksimum: {max_value} sekunder\n- Nuværende: {current_value} sekunder\n\n**Fejlfindingsnotifikationer:**\n{debug_help}",
                 "data": {
-                    "update_interval": "Opdateringsinterval (sekunder)"
+                    "update_interval": "Opdateringsinterval (sekunder)",
+                    "debug_notifications": "Aktiver fejlfindingsnotifikationer"
                 }
             }
         },
         "error": {
-            "invalid_update_interval": "Opdateringsintervallet skal være mellem minimum- og maksimumværdierne",
+            "invalid_update_interval": "Ugyldigt interval - skal være mellem {min_value} og {max_value} sekunder",
             "unknown": "Uventet fejl opstod"
         }
+    },
+    "system_health": {
+        "info": {
+            "version": "Version",
+            "can_reach_server": "Forbindelse til Enode API",
+            "vehicles_configured": "Antal konfigurerede køretøjer"
+        }
+    },
+    "services": {
+        "refresh": {
+            "name": "Opdater",
+            "description": "Tving en opdatering af køretøjsdata"
+        }
+    },
+    "debug_notifications": {
+        "description": "Aktiver for at vise detaljerede API-svar som notifikationer (maksimalt hver 10. minut).\nViser rå køretøjsdata og eventuelle fejlmeddelelser.\nNotifikationerne forbliver synlige indtil de lukkes manuelt."
     }
 }

@@ -3,7 +3,7 @@
         "step": {
             "user": {
                 "title": "Enode Connection",
-                "description": "Set up your Enode integration.",
+                "description": "Configure your Enode integration.",
                 "data": {
                     "client_id": "Client ID",
                     "client_secret": "Client Secret"
@@ -11,41 +11,61 @@
             },
             "vehicle": {
                 "title": "Select Vehicle",
-                "description": "Choose which vehicle to add.",
+                "description": "Choose which vehicle to add. Already configured vehicles are not shown.",
                 "data": {
                     "vehicle_id": "Vehicle"
                 }
             },
             "interval": {
-                "title": "Update Interval",
-                "description": "Update interval in seconds. Controls how often the integration polls for new data.\n\nMinimum: {min_value}\nMaximum: {max_value}\nDefault: {default_value}\nRecommended: {recommended_value} (5 minutes)\n\nNote: Changes require reloading the integration:\n1. Save this configuration\n2. Go back to Integrations\n3. Find Enode integration\n4. Click ⋮ (three dots menu)\n5. Select \"Reload\"\n\nTip: Too frequent updates may cause API rate limiting.",
+                "title": "Update Settings",
+                "description": "Configure how often the integration updates data and debugging options.\n\n**Update Interval:**\n- Minimum: {min_value} seconds\n- Maximum: {max_value} seconds\n- Default: {default_value} seconds\n\n**Debug Notifications:**\n{debug_help}",
                 "data": {
-                    "update_interval": "Update interval (seconds)"
+                    "update_interval": "Update interval (seconds)",
+                    "debug_notifications": "Enable debug notifications"
                 }
             }
         },
         "error": {
             "invalid_auth": "Invalid authentication",
-            "unknown": "Unexpected error occurred"
+            "unknown": "Unexpected error occurred",
+            "invalid_update_interval": "Invalid interval - must be between {min_value} and {max_value} seconds"
         },
         "abort": {
             "no_vehicles": "No vehicles found in account",
-            "no_vehicles_available": "No unconfigured vehicles available"
+            "no_vehicles_available": "No vehicles available (all are already configured)",
+            "already_configured": "This vehicle is already configured"
         }
     },
     "options": {
         "step": {
             "init": {
-                "title": "Enode Options",
-                "description": "Update interval in seconds. Controls how often the integration polls for new data.\n\nMinimum: {min_value}\nMaximum: {max_value}\nDefault: {default_value}\nRecommended: {recommended_value} (5 minutes)\n\nNote: Changes require reloading the integration:\n1. Save this configuration\n2. Go back to Integrations\n3. Find Enode integration\n4. Click ⋮ (three dots menu)\n5. Select \"Reload\"\n\nTip: Too frequent updates may cause API rate limiting.",
+                "title": "Enode Settings",
+                "description": "Adjust update frequency and debugging options.\n\n**Update Interval:**\n- Minimum: {min_value} seconds\n- Maximum: {max_value} seconds\n- Current: {current_value} seconds\n\n**Debug Notifications:**\n{debug_help}",
                 "data": {
-                    "update_interval": "Update interval (seconds)"
+                    "update_interval": "Update interval (seconds)",
+                    "debug_notifications": "Enable debug notifications"
                 }
             }
         },
         "error": {
-            "invalid_update_interval": "Update interval must be between minimum and maximum values",
+            "invalid_update_interval": "Invalid interval - must be between {min_value} and {max_value} seconds",
             "unknown": "Unexpected error occurred"
         }
+    },
+    "system_health": {
+        "info": {
+            "version": "Version",
+            "can_reach_server": "Connection to Enode API",
+            "vehicles_configured": "Number of configured vehicles"
+        }
+    },
+    "services": {
+        "refresh": {
+            "name": "Refresh",
+            "description": "Force an update of vehicle data"
+        }
+    },
+    "debug_notifications": {
+        "description": "Enable to show detailed API responses as notifications (maximum every 10 minutes).\nShows raw vehicle data and any error messages.\nNotifications remain visible until manually dismissed."
     }
 }
