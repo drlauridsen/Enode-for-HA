@@ -45,6 +45,7 @@ async def async_setup_entry(
         EnodeChargingBinarySensor(coordinator, vehicle_id),
         EnodeFullyChargedBinarySensor(coordinator, vehicle_id),
         EnodeReachableBinarySensor(coordinator, vehicle_id),
+        EnodePowerDeliveryBinarySensor(coordinator, vehicle_id),
     ]
 
     async_add_entities(binary_sensors)
@@ -131,3 +132,22 @@ class EnodeReachableBinarySensor(EnodeBinarySensorBase):
     def is_on(self) -> bool | None:
         """Return true if the binary sensor is on."""
         return self.coordinator.data.get("isReachable")
+
+class EnodePowerDeliveryBinarySensor(EnodeBinarySensorBase):
+    """Representation of power delivery state."""
+
+    _attr_name = "Power Delivery"
+    _attr_device_class = BinarySensorDeviceClass.POWER
+    _attr_icon = "mdi:power-plug"
+
+    def __init__(self, coordinator, vehicle_id):
+        """Initialize the binary sensor."""
+        super().__init__(coordinator, vehicle_id)
+        self._attr_unique_id = f"{vehicle_id}_power_delivery"
+
+    @property
+    def is_on(self) -> bool | None:
+        """Return true if power is being delivered."""
+        charge_state = self.coordinator.data.get("chargeState", {})
+        status = charge_state.get("powerDeliveryState", "").lower()
+        return "unplugged" not in status and status != ""

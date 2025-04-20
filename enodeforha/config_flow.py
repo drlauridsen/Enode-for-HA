@@ -1,5 +1,4 @@
 """Config flow for Enode integration."""
-
 from __future__ import annotations
 
 import logging
@@ -23,7 +22,9 @@ from .const import (
     CONF_TOKEN_EXPIRY,
     CONF_VEHICLE_ID,
     CONF_UPDATE_INTERVAL,
+    CONF_DEBUG_NOTIFICATIONS,
     DEFAULT_UPDATE_INTERVAL,
+    DEFAULT_DEBUG_NOTIFICATIONS,
     MIN_UPDATE_INTERVAL,
     MAX_UPDATE_INTERVAL,
     API_BASE_URL,
@@ -242,7 +243,6 @@ class EnodeConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
             vehicle_info = self._vehicle.get('information', {})
             title = f"Enode {vehicle_info.get('displayName', 'Vehicle')}"
             
-            # Only store essential configuration in the entry
             return self.async_create_entry(
                 title=title,
                 data={
@@ -250,7 +250,10 @@ class EnodeConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
                     CONF_CLIENT_ID: self._token_info[CONF_CLIENT_ID],
                     CONF_CLIENT_SECRET: self._token_info[CONF_CLIENT_SECRET],
                     CONF_VEHICLE_ID: self._vehicle["id"],
-                    CONF_UPDATE_INTERVAL: user_input[CONF_UPDATE_INTERVAL]
+                },
+                options={
+                    CONF_UPDATE_INTERVAL: user_input[CONF_UPDATE_INTERVAL],
+                    CONF_DEBUG_NOTIFICATIONS: user_input[CONF_DEBUG_NOTIFICATIONS]
                 }
             )
 
@@ -263,8 +266,17 @@ class EnodeConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
                 ): vol.All(
                     cv.positive_int,
                     vol.Range(min=MIN_UPDATE_INTERVAL, max=MAX_UPDATE_INTERVAL)
-                )
+                ),
+                vol.Required(
+                    CONF_DEBUG_NOTIFICATIONS,
+                    default=DEFAULT_DEBUG_NOTIFICATIONS
+                ): bool
             }),
+            description_placeholders={
+                "min_interval": str(MIN_UPDATE_INTERVAL),
+                "max_interval": str(MAX_UPDATE_INTERVAL),
+                "default_interval": str(DEFAULT_UPDATE_INTERVAL),
+            },
             errors=errors
         )
 
@@ -273,7 +285,6 @@ class EnodeOptionsFlow(config_entries.OptionsFlow):
 
     def __init__(self, config_entry: config_entries.ConfigEntry) -> None:
         """Initialize options flow."""
-        super().__init__()
         self._config_entry = config_entry
 
     async def async_step_init(
@@ -292,16 +303,23 @@ class EnodeOptionsFlow(config_entries.OptionsFlow):
                     # Everything is valid, save the new options
                     return self.async_create_entry(
                         title="",
-                        data={CONF_UPDATE_INTERVAL: update_interval}
+                        data={
+                            CONF_UPDATE_INTERVAL: update_interval,
+                            CONF_DEBUG_NOTIFICATIONS: user_input[CONF_DEBUG_NOTIFICATIONS]
+                        }
                     )
-            except Exception:  # pylint: disable=broad-except
+            except Exception:
                 _LOGGER.exception("Unexpected error saving options")
                 errors["base"] = "unknown"
 
-        # Get current update interval from options or data
+        # Get current settings from options
         current_interval = self._config_entry.options.get(
             CONF_UPDATE_INTERVAL,
-            self._config_entry.data.get(CONF_UPDATE_INTERVAL, DEFAULT_UPDATE_INTERVAL)
+            DEFAULT_UPDATE_INTERVAL
+        )
+        current_debug = self._config_entry.options.get(
+            CONF_DEBUG_NOTIFICATIONS,
+            DEFAULT_DEBUG_NOTIFICATIONS
         )
 
         return self.async_show_form(
@@ -313,13 +331,16 @@ class EnodeOptionsFlow(config_entries.OptionsFlow):
                 ): vol.All(
                     cv.positive_int,
                     vol.Range(min=MIN_UPDATE_INTERVAL, max=MAX_UPDATE_INTERVAL)
-                )
+                ),
+                vol.Required(
+                    CONF_DEBUG_NOTIFICATIONS,
+                    default=current_debug
+                ): bool
             }),
             description_placeholders={
                 "min_value": str(MIN_UPDATE_INTERVAL),
                 "max_value": str(MAX_UPDATE_INTERVAL),
                 "default_value": str(DEFAULT_UPDATE_INTERVAL),
-                "recommended_value": "300",  # 5 minutes
             },
             errors=errors,
         )

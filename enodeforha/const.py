@@ -20,11 +20,9 @@ class Environment(Enum):
     SANDBOX = "sandbox"
     PRODUCTION = "production"
 
-DOMAIN = "enodeforha"
-
 # Switch environments by uncommenting the one you want:
 #CURRENT_ENVIRONMENT = Environment.SANDBOX
-CURRENT_ENVIRONMENT = Environment.PRODUCTION
+CURRENT_ENVIRONMENT = Environment.PRODUCTION  # Uncomment for production
 
 # Base URL parts
 BASE_API_URL = "enode-api.{domain}.enode.io"
@@ -39,7 +37,12 @@ def get_oauth_url(environment: Environment) -> str:
     domain = "sandbox" if environment == Environment.SANDBOX else "production"
     return f"https://{BASE_OAUTH_URL.format(domain=domain)}/oauth2/token"
 
-PLATFORMS = ["sensor", "binary_sensor", "switch"]
+DOMAIN = "enodeforha"
+PLATFORMS = ["sensor", "binary_sensor", "switch", "device_tracker"]
+
+CONF_DEBUG_NOTIFICATIONS = "debug_notifications"
+DEFAULT_DEBUG_NOTIFICATIONS = False
+DEBUG_NOTIFICATION_INTERVAL = 600  # 10 minutes in seconds
 
 # API Configuration
 API_BASE_URL = get_api_url(CURRENT_ENVIRONMENT)
@@ -110,6 +113,20 @@ SENSOR_TYPES: tuple[EnodeSensorEntityDescription, ...] = (
         device_class=SensorDeviceClass.DISTANCE,
         state_class=SensorStateClass.MEASUREMENT,
     ),
+    EnodeSensorEntityDescription(
+        key="charge_limit",
+        name="Charge Limit",
+        value_key="chargeState.chargeLimit",
+        native_unit_of_measurement=PERCENTAGE,
+        device_class=SensorDeviceClass.BATTERY,
+        state_class=SensorStateClass.MEASUREMENT,
+    ),
+    EnodeSensorEntityDescription(
+        key="last_seen",
+        name="Last Seen",
+        value_key="lastSeen",
+        device_class=SensorDeviceClass.TIMESTAMP,
+    ),
 )
 
 # Binary sensor definitions
@@ -125,5 +142,11 @@ BINARY_SENSOR_TYPES: tuple[EnodeBinarySensorEntityDescription, ...] = (
         name="Plug Status",
         value_key="charge.isPluggedIn",
         device_class=BinarySensorDeviceClass.PLUG,
+    ),
+    EnodeBinarySensorEntityDescription(
+        key="power_delivery",
+        name="Power Delivery",
+        value_key="chargeState.powerDeliveryState",
+        device_class=BinarySensorDeviceClass.POWER,
     ),
 )

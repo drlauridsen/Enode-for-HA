@@ -1,5 +1,4 @@
 """Sensor platform for Enode integration."""
-
 from __future__ import annotations
 from datetime import datetime, timezone
 import logging
@@ -16,7 +15,6 @@ from homeassistant.const import (
     UnitOfPower,
     UnitOfTime,
     PERCENTAGE,
-    CONF_CLIENT_ID,
 )
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
@@ -28,6 +26,8 @@ from .const import (
     CONF_TOKEN_EXPIRY,
     TOKEN_EXPIRY_BUFFER,
     CONF_INTEGRATION_ID,
+    CONF_VEHICLE_ID,
+    CONF_CLIENT_ID,
 )
 
 _LOGGER = logging.getLogger(__name__)
@@ -64,6 +64,8 @@ async def async_setup_entry(
         EnodeChargeRateSensor(coordinator, vehicle_id),
         EnodeChargeTimeRemainingSensor(coordinator, vehicle_id),
         EnodeOdometerSensor(coordinator, vehicle_id),
+        EnodeChargeLimitSensor(coordinator, vehicle_id),
+        EnodeLastSeenSensor(coordinator, vehicle_id),
         EnodeTokenRenewalSensor(coordinator, vehicle_id, entry.entry_id),
     ]
 
@@ -199,8 +201,48 @@ class EnodeOdometerSensor(EnodeSensorBase):
         odometer = self.coordinator.data.get("odometer")
         return odometer.get("distance") if odometer else None
 
+class EnodeChargeLimitSensor(EnodeSensorBase):
+    """Representation of an Enode charge limit sensor."""
+
+    _attr_name = "Charge limit"
+    _attr_native_unit_of_measurement = PERCENTAGE
+    _attr_device_class = SensorDeviceClass.BATTERY
+    _attr_state_class = SensorStateClass.MEASUREMENT
+    _attr_icon = "mdi:battery-arrow-up"
+
+    def __init__(self, coordinator, vehicle_id):
+        """Initialize the sensor."""
+        super().__init__(coordinator, vehicle_id)
+        self._attr_unique_id = f"{vehicle_id}_charge_limit"
+
+    @property
+    def native_value(self) -> float | None:
+        """Return the state of the sensor."""
+        charge_state = self.coordinator.data.get("chargeState")
+        return charge_state.get("chargeLimit") if charge_state else None
+
+class EnodeLastSeenSensor(EnodeSensorBase):
+    """Representation of an Enode last seen sensor."""
+
+    _attr_name = "Last seen"
+    _attr_device_class = SensorDeviceClass.TIMESTAMP
+    _attr_icon = "mdi:clock-check-outline"
+
+    def __init__(self, coordinator, vehicle_id):
+        """Initialize the sensor."""
+        super().__init__(coordinator, vehicle_id)
+        self._attr_unique_id = f"{vehicle_id}_last_seen"
+
+    @property
+    def native_value(self) -> datetime | None:
+        """Return the state of the sensor."""
+        last_seen = self.coordinator.data.get("lastSeen")
+        if not last_seen:
+            return None
+        return dt_util.parse_datetime(last_seen)
+
 class EnodeTokenRenewalSensor(EnodeSensorBase):
-    """Representation of a token renewal sensor for each vehicle."""
+    """Representation of a token renewal sensor."""
     
     _attr_name = "Token Renewal"
     _attr_device_class = SensorDeviceClass.TIMESTAMP
@@ -223,7 +265,7 @@ class EnodeTokenRenewalSensor(EnodeSensorBase):
 
     @property
     def native_value(self) -> datetime | None:
-        """Return the next scheduled renewal time from shared token storage."""
+        """Return the next scheduled renewal time."""
         if not self.available:
             return None
             
@@ -242,9 +284,14 @@ class EnodeTokenRenewalSensor(EnodeSensorBase):
         expiry_time = token_info[CONF_TOKEN_EXPIRY]
         next_renewal = expiry_time - TOKEN_EXPIRY_BUFFER
 
+        # Count vehicles using this token
+        vehicle_count = len([
+            c for c in self.hass.data[DOMAIN]["coordinators"].values() 
+            if c._integration_id == self.coordinator._integration_id
+        ])
+
         return {
             "integration_id": self.coordinator._integration_id,
-            "shared_across_vehicles": True,
             "client_id": token_info.get(CONF_CLIENT_ID, ""),
             "token_expiry": dt_util.as_local(
                 datetime.fromtimestamp(expiry_time, tz=timezone.utc)
@@ -253,5 +300,12 @@ class EnodeTokenRenewalSensor(EnodeSensorBase):
             "next_renewal_in": f"{(next_renewal - now)/60:.1f} minutes" if next_renewal > now else "0 minutes",
             "scheduled": dt_util.as_local(
                 datetime.fromtimestamp(next_renewal, tz=timezone.utc)
-            ).strftime("%Y-%m-%d %H:%M:%S")
+            ).strftime("%Y-%m-%d %H:%M:%S"),
+           "shared_across_vehicles": True,
+            "vehicle_count": vehicle_count,
+            "vehicles_using_token": [
+                entry.data.get(CONF_VEHICLE_ID)
+                for entry in self.hass.config_entries.async_entries(DOMAIN)
+                if entry.data.get(CONF_INTEGRATION_ID) == self.coordinator._integration_id
+            ]
         }

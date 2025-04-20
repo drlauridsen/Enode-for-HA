@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import asyncio
+import json
 from datetime import datetime, timedelta, timezone
 import logging
 from typing import Any
@@ -26,7 +27,10 @@ from .const import (
     CONF_TOKEN_EXPIRY,
     CONF_VEHICLE_ID,
     CONF_UPDATE_INTERVAL,
+    CONF_DEBUG_NOTIFICATIONS,
     DEFAULT_UPDATE_INTERVAL,
+    DEFAULT_DEBUG_NOTIFICATIONS,
+    DEBUG_NOTIFICATION_INTERVAL,
     PLATFORMS,
     OAUTH_URL,
     CONF_INTEGRATION_ID,
@@ -48,6 +52,16 @@ async def async_setup(hass: HomeAssistant, config: dict) -> bool:
 async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     """Set up Enode from a config entry."""
     integration_id = entry.data[CONF_INTEGRATION_ID]
+    
+    # Add debug option if not exists
+    if entry.options.get(CONF_DEBUG_NOTIFICATIONS) is None:
+        hass.config_entries.async_update_entry(
+            entry,
+            options={
+                **entry.options,
+                CONF_DEBUG_NOTIFICATIONS: DEFAULT_DEBUG_NOTIFICATIONS
+            }
+        )
     
     if DOMAIN not in hass.data:
         await async_setup(hass, {})
@@ -150,6 +164,11 @@ class EnodeCoordinator(DataUpdateCoordinator):
         self._device_info: dict[str, DeviceInfo] = {}
         self._token_lock = asyncio.Lock()
         self._renewal_attempted = False
+        self._last_debug_notification = None
+        self._debug_enabled = entry.options.get(
+            CONF_DEBUG_NOTIFICATIONS, 
+            DEFAULT_DEBUG_NOTIFICATIONS
+        )
 
     @property
     def device_info(self) -> dict[str, DeviceInfo]:
@@ -211,6 +230,12 @@ class EnodeCoordinator(DataUpdateCoordinator):
                     
             except Exception as err:
                 _LOGGER.error("Token renewal failed: %s", str(err))
+                if self._debug_enabled:
+                    self.hass.components.persistent_notification.create(
+                        f"Token renewal failed:\n\n{str(err)}",
+                        title=f"Enode Token Error - {self.vehicle_id}",
+                        notification_id=f"enode_token_error_{self.vehicle_id}"
+                    )
                 raise
 
     async def _async_update_data(self) -> dict[str, Any]:
@@ -258,6 +283,19 @@ class EnodeCoordinator(DataUpdateCoordinator):
             if not vehicle_data:
                 raise ValueError(f"Vehicle {self.vehicle_id} not found in API response")
 
+            # Debug notifications
+            if self._debug_enabled:
+                now = datetime.now(timezone.utc)
+                if (self._last_debug_notification is None or 
+                    (now - self._last_debug_notification).total_seconds() >= DEBUG_NOTIFICATION_INTERVAL):
+                    
+                    self.hass.components.persistent_notification.create(
+                        f"Enode API Debug Data:\n\n```json\n{json.dumps(vehicle_data, indent=2)}\n```",
+                        title=f"Enode Debug - {self.vehicle_id}",
+                        notification_id=f"enode_debug_{self.vehicle_id}"
+                    )
+                    self._last_debug_notification = now
+
             # Update device info
             info = vehicle_data.get('information', {})
             self._device_info = {
@@ -276,8 +314,20 @@ class EnodeCoordinator(DataUpdateCoordinator):
         except aiohttp.ClientError as err:
             _LOGGER.error("Network error updating data for vehicle %s: %s", 
                          self.vehicle_id, str(err))
+            if self._debug_enabled:
+                self.hass.components.persistent_notification.create(
+                    f"Network error:\n\n{str(err)}",
+                    title=f"Enode Network Error - {self.vehicle_id}",
+                    notification_id=f"enode_network_error_{self.vehicle_id}"
+                )
             raise UpdateFailed(f"Network error: {err}") from err
         except Exception as err:
             _LOGGER.error("Error updating data for vehicle %s: %s", 
                          self.vehicle_id, str(err), exc_info=True)
+            if self._debug_enabled:
+                self.hass.components.persistent_notification.create(
+                    f"API Error:\n\n{str(err)}",
+                    title=f"Enode API Error - {self.vehicle_id}",
+                    notification_id=f"enode_api_error_{self.vehicle_id}"
+                )
             raise UpdateFailed(f"Error updating data: {err}") from err
