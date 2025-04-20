@@ -2,7 +2,7 @@
 Enode vehicle custom integration for Homeassistant
 
 Still betaversion, and only tested with Enode sandbox environment, since I am awaiting production access.
-Still missing some features, including working location sensor and translations. And might have bugs. But again - waiting until I have real-life vehicle access to continue work.
+Still missing some features and translations. And might have bugs. But again - waiting until I have real-life vehicle access to continue work.
 Inspired by https://github.com/OldSmurf56/xpeng but I have chosen to make a custom integration instead of using nodered.
 The initial setup described by oldsmurf56 is basically the same, I have however made the linksession step easier, as described in step 3 in the enode setup..
 
