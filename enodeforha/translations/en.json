@@ -1,71 +1,53 @@
 {
     "config": {
+        "abort": {
+            "no_vehicles": "No vehicles found with your credentials.",
+            "no_vehicles_available": "No vehicles available for configuration."
+        },
+        "error": {
+            "invalid_auth": "Invalid authentication credentials.",
+            "unknown": "An unexpected error occurred."
+        },
         "step": {
             "user": {
-                "title": "Enode Connection",
-                "description": "Configure your Enode integration.",
                 "data": {
                     "client_id": "Client ID",
                     "client_secret": "Client Secret"
-                }
+                },
+                "description": "Enter your Enode API credentials.",
+                "title": "Enode Account"
             },
             "vehicle": {
-                "title": "Select Vehicle",
-                "description": "Choose which vehicle to add. Already configured vehicles are not shown.",
                 "data": {
                     "vehicle_id": "Vehicle"
-                }
+                },
+                "description": "Select the vehicle you want to add.",
+                "title": "Select Vehicle"
             },
             "interval": {
-                "title": "Update Settings",
-                "description": "Configure how often the integration updates data and debugging options.\n\n**Update Interval:**\n- Minimum: {min_value} seconds\n- Maximum: {max_value} seconds\n- Default: {default_value} seconds\n\n**Debug Notifications:**\n{debug_help}",
                 "data": {
                     "update_interval": "Update interval (seconds)",
-                    "debug_notifications": "Enable debug notifications"
-                }
+                    "debug_notifications": "Debug notifications (show API responses)"
+                },
+                "description": "Configure how often to update the vehicle data. Minimum: {min_value} seconds, Maximum: {max_value} seconds, Default: {default_value} seconds.",
+                "title": "Configuration Options"
             }
-        },
-        "error": {
-            "invalid_auth": "Invalid authentication",
-            "unknown": "Unexpected error occurred",
-            "invalid_update_interval": "Invalid interval - must be between {min_value} and {max_value} seconds"
-        },
-        "abort": {
-            "no_vehicles": "No vehicles found in account",
-            "no_vehicles_available": "No vehicles available (all are already configured)",
-            "already_configured": "This vehicle is already configured"
         }
     },
     "options": {
+        "error": {
+            "invalid_update_interval": "Invalid update interval. Must be between {min_value} and {max_value} seconds.",
+            "unknown": "Unexpected error occurred"
+        },
         "step": {
             "init": {
-                "title": "Enode Settings",
-                "description": "Adjust update frequency and debugging options.\n\n**Update Interval:**\n- Minimum: {min_value} seconds\n- Maximum: {max_value} seconds\n- Current: {current_value} seconds\n\n**Debug Notifications:**\n{debug_help}",
                 "data": {
                     "update_interval": "Update interval (seconds)",
-                    "debug_notifications": "Enable debug notifications"
-                }
+                    "debug_notifications": "Debug notifications (show API responses)"
+                },
+                "description": "Update configuration options. Current update interval: {current_value} seconds.",
+                "title": "Enode Options"
             }
-        },
-        "error": {
-            "invalid_update_interval": "Invalid interval - must be between {min_value} and {max_value} seconds",
-            "unknown": "Unexpected error occurred"
         }
-    },
-    "system_health": {
-        "info": {
-            "version": "Version",
-            "can_reach_server": "Connection to Enode API",
-            "vehicles_configured": "Number of configured vehicles"
-        }
-    },
-    "services": {
-        "refresh": {
-            "name": "Refresh",
-            "description": "Force an update of vehicle data"
-        }
-    },
-    "debug_notifications": {
-        "description": "Enable to show detailed API responses as notifications (maximum every 10 minutes).\nShows raw vehicle data and any error messages.\nNotifications remain visible until manually dismissed."
     }
 }

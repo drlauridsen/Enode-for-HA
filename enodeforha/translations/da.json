@@ -1,71 +1,53 @@
 {
     "config": {
-        "step": {
-            "user": {
-                "title": "Enode-forbindelse",
-                "description": "Konfigurer din Enode-integration.",
-                "data": {
-                    "client_id": "Klient-ID",
-                    "client_secret": "Klienthemmelighed"
-                }
-            },
-            "vehicle": {
-                "title": "Vælg køretøj",
-                "description": "Vælg hvilket køretøj der skal tilføjes. Allerede konfigurerede køretøjer vises ikke.",
-                "data": {
-                    "vehicle_id": "Køretøj"
-                }
-            },
-            "interval": {
-                "title": "Opdateringsindstillinger",
-                "description": "Konfigurer hvor ofte integrationen skal opdatere data og fejlfindingsindstillinger.\n\n**Opdateringsinterval:**\n- Minimum: {min_value} sekunder\n- Maksimum: {max_value} sekunder\n- Standard: {default_value} sekunder\n\n**Fejlfindingsnotifikationer:**\n{debug_help}",
-                "data": {
-                    "update_interval": "Opdateringsinterval (sekunder)",
-                    "debug_notifications": "Aktiver fejlfindingsnotifikationer"
-                }
-            }
+        "abort": {
+            "no_vehicles": "Ingen køretøjer fundet med dine legitimationsoplysninger.",
+            "no_vehicles_available": "Ingen køretøjer tilgængelige for konfiguration."
         },
         "error": {
-            "invalid_auth": "Ugyldig godkendelse",
-            "unknown": "Uventet fejl opstod",
-            "invalid_update_interval": "Ugyldigt interval - skal være mellem {min_value} og {max_value} sekunder"
+            "invalid_auth": "Ugyldige legitimationsoplysninger.",
+            "unknown": "Der opstod en uventet fejl."
         },
-        "abort": {
-            "no_vehicles": "Ingen køretøjer fundet i kontoen",
-            "no_vehicles_available": "Ingen flere køretøjer tilgængelige (alle er allerede konfigureret)",
-            "already_configured": "Dette køretøj er allerede konfigureret"
+        "step": {
+            "user": {
+                "data": {
+                    "client_id": "Klient-ID",
+                    "client_secret": "Klient-hemmelighed"
+                },
+                "description": "Indtast dine Enode API-legitimationsoplysninger.",
+                "title": "Enode-konto"
+            },
+            "vehicle": {
+                "data": {
+                    "vehicle_id": "Køretøj"
+                },
+                "description": "Vælg det køretøj, du vil tilføje.",
+                "title": "Vælg køretøj"
+            },
+            "interval": {
+                "data": {
+                    "update_interval": "Opdateringsinterval (sekunder)",
+                    "debug_notifications": "Fejlfindingsnotifikationer"
+                },
+                "description": "Konfigurer hvor ofte køretøjsdata skal opdateres. Minimum: {min_value} sekunder, Maksimum: {max_value} sekunder, Standard: {default_value} sekunder.",
+                "title": "Konfigurationsmuligheder"
+            }
         }
     },
     "options": {
+        "error": {
+            "invalid_update_interval": "Ugyldigt opdateringsinterval. Skal være mellem {min_value} og {max_value} sekunder.",
+            "unknown": "Der opstod en uventet fejl"
+        },
         "step": {
             "init": {
-                "title": "Enode-indstillinger",
-                "description": "Justér opdateringsfrekvens og fejlfindingsindstillinger.\n\n**Opdateringsinterval:**\n- Minimum: {min_value} sekunder\n- Maksimum: {max_value} sekunder\n- Nuværende: {current_value} sekunder\n\n**Fejlfindingsnotifikationer:**\n{debug_help}",
                 "data": {
                     "update_interval": "Opdateringsinterval (sekunder)",
-                    "debug_notifications": "Aktiver fejlfindingsnotifikationer"
-                }
+                    "debug_notifications": "Fejlfindingsnotifikationer"
+                },
+                "description": "Opdater konfigurationsmuligheder. Nuværende opdateringsinterval: {current_value} sekunder.",
+                "title": "Enode-indstillinger"
             }
-        },
-        "error": {
-            "invalid_update_interval": "Ugyldigt interval - skal være mellem {min_value} og {max_value} sekunder",
-            "unknown": "Uventet fejl opstod"
         }
-    },
-    "system_health": {
-        "info": {
-            "version": "Version",
-            "can_reach_server": "Forbindelse til Enode API",
-            "vehicles_configured": "Antal konfigurerede køretøjer"
-        }
-    },
-    "services": {
-        "refresh": {
-            "name": "Opdater",
-            "description": "Tving en opdatering af køretøjsdata"
-        }
-    },
-    "debug_notifications": {
-        "description": "Aktiver for at vise detaljerede API-svar som notifikationer (maksimalt hver 10. minut).\nViser rå køretøjsdata og eventuelle fejlmeddelelser.\nNotifikationerne forbliver synlige indtil de lukkes manuelt."
     }
 }
