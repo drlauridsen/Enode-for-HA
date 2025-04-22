@@ -267,7 +267,7 @@ class EnodeConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
         if user_input is not None:
             # Always include required sensors
             selected_sensors = list(set(user_input.get(CONF_SELECTED_SENSORS, []) + 
-                                     ["token_renewal", "vehicle_information"]))
+                                 ["token_renewal", "vehicle_information"]))
             
             vehicle_info = self._vehicle.get('information', {})
             title = f"Enode {vehicle_info.get('displayName', 'Vehicle')}"
@@ -312,10 +312,6 @@ class EnodeOptionsFlow(config_entries.OptionsFlow):
             CONF_DEBUG_NOTIFICATIONS,
             DEFAULT_DEBUG_NOTIFICATIONS
         )
-        self._current_sensors = config_entry.options.get(
-            CONF_SELECTED_SENSORS,
-            DEFAULT_SELECTED_SENSORS
-        )
 
     async def async_step_init(
         self, user_input: dict[str, Any] | None = None
@@ -329,24 +325,19 @@ class EnodeOptionsFlow(config_entries.OptionsFlow):
                 if not MIN_UPDATE_INTERVAL <= update_interval <= MAX_UPDATE_INTERVAL:
                     errors["base"] = "invalid_update_interval"
                 else:
-                    # Always include required sensors
-                    selected_sensors = list(set(user_input.get(CONF_SELECTED_SENSORS, []) + 
-                                             ["token_renewal", "vehicle_information"]))
-                    
                     return self.async_create_entry(
                         title="",
                         data={
                             CONF_UPDATE_INTERVAL: update_interval,
                             CONF_DEBUG_NOTIFICATIONS: user_input[CONF_DEBUG_NOTIFICATIONS],
-                            CONF_SELECTED_SENSORS: selected_sensors
+                            # Keep the existing selected sensors from the config entry
+                            CONF_SELECTED_SENSORS: self._config_entry.options.get(CONF_SELECTED_SENSORS, DEFAULT_SELECTED_SENSORS)
                         }
                     )
             except Exception:
                 _LOGGER.exception("Unexpected error saving options")
                 errors["base"] = "unknown"
 
-        sensors = {k: v for k, v in AVAILABLE_SENSORS.items()}
-        
         data_schema = vol.Schema({
             vol.Required(
                 CONF_UPDATE_INTERVAL,
@@ -359,11 +350,7 @@ class EnodeOptionsFlow(config_entries.OptionsFlow):
             vol.Required(
                 CONF_DEBUG_NOTIFICATIONS,
                 default=self._current_debug
-            ): bool,
-            vol.Required(
-                CONF_SELECTED_SENSORS,
-                default=self._current_sensors
-            ): cv.multi_select(sensors)
+            ): bool
         })
 
         return self.async_show_form(
