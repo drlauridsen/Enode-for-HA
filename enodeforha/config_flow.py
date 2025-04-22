@@ -1,11 +1,9 @@
 """Config flow for Enode integration."""
 from __future__ import annotations
-
+import aiohttp
 import logging
 from typing import Any
 from datetime import datetime, timezone
-
-import aiohttp
 import voluptuous as vol
 
 from homeassistant import config_entries
@@ -23,8 +21,10 @@ from .const import (
     CONF_VEHICLE_ID,
     CONF_UPDATE_INTERVAL,
     CONF_DEBUG_NOTIFICATIONS,
+    CONF_SELECTED_SENSORS,
     DEFAULT_UPDATE_INTERVAL,
     DEFAULT_DEBUG_NOTIFICATIONS,
+    DEFAULT_SELECTED_SENSORS,
     MIN_UPDATE_INTERVAL,
     MAX_UPDATE_INTERVAL,
     API_BASE_URL,
@@ -32,6 +32,7 @@ from .const import (
     OAUTH_URL,
     CONF_INTEGRATION_ID,
     TOKEN_EXPIRY_BUFFER,
+    AVAILABLE_SENSORS,
 )
 
 _LOGGER = logging.getLogger(__name__)
@@ -48,7 +49,6 @@ def is_token_valid(token_info: dict[str, Any]) -> bool:
     
     current_time = datetime.now(timezone.utc).timestamp()
     expiry_time = token_info[CONF_TOKEN_EXPIRY]
-    # Consider token invalid if it's within the buffer period
     return current_time < (expiry_time - TOKEN_EXPIRY_BUFFER)
 
 async def validate_credentials(hass: HomeAssistant, data: dict[str, Any]) -> dict[str, Any]:
@@ -67,7 +67,6 @@ async def validate_credentials(hass: HomeAssistant, data: dict[str, Any]) -> dic
                 raise ValueError(f"API returned status {response.status}")
             
             token_data = await response.json()
-            # Calculate absolute expiry timestamp
             expiry_time = datetime.now(timezone.utc).timestamp() + int(token_data.get("expires_in", 3600))
             
             return {
@@ -110,6 +109,7 @@ class EnodeConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
         self._token_info: dict[str, Any] = {}
         self._vehicle: dict[str, Any] = {}
         self._integration_id: str = None
+        self._interval_data: dict[str, Any] = {}
 
     @staticmethod
     @callback
@@ -125,7 +125,6 @@ class EnodeConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
         
         if user_input is not None:
             try:
-                # Initialize domain data if needed
                 if DOMAIN not in self.hass.data:
                     self.hass.data[DOMAIN] = {
                         "next_id": 1,
@@ -134,39 +133,29 @@ class EnodeConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
                         "coordinators": {}
                     }
 
-                # Find existing integration for these credentials
                 existing_entries = [
                     entry for entry in self.hass.config_entries.async_entries(DOMAIN)
                     if entry.data.get(CONF_CLIENT_ID) == user_input[CONF_CLIENT_ID]
                 ]
                 
                 if existing_entries:
-                    # Use existing integration ID
                     self._integration_id = existing_entries[0].data[CONF_INTEGRATION_ID]
                     existing_token = self.hass.data[DOMAIN]["tokens"].get(self._integration_id)
                     
                     if existing_token and is_token_valid(existing_token):
-                        _LOGGER.debug(
-                            "Reusing existing valid token for integration %s",
-                            self._integration_id
-                        )
+                        _LOGGER.debug("Reusing existing valid token for integration %s", self._integration_id)
                         self._token_info = existing_token
                     else:
-                        _LOGGER.debug(
-                            "Existing token for integration %s is invalid or expired, creating new token",
-                            self._integration_id
-                        )
+                        _LOGGER.debug("Existing token for integration %s is invalid or expired, creating new token", self._integration_id)
                         self._token_info = await validate_credentials(self.hass, user_input)
                         self.hass.data[DOMAIN]["tokens"][self._integration_id] = self._token_info
                 else:
-                    # Create new integration and token
                     self._integration_id = f"{DOMAIN}_{self.hass.data[DOMAIN]['next_id']}"
                     self.hass.data[DOMAIN]["next_id"] += 1
                     self._token_info = await validate_credentials(self.hass, user_input)
                     self.hass.data[DOMAIN]["tokens"][self._integration_id] = self._token_info
                     _LOGGER.debug("Created new integration %s", self._integration_id)
                 
-                # Test token by getting vehicles
                 try:
                     self._vehicles = await get_vehicles(
                         self.hass,
@@ -174,7 +163,6 @@ class EnodeConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
                     )
                 except Exception as err:
                     _LOGGER.error("Failed to get vehicles with token: %s", err)
-                    # If using existing token and it failed, try getting a new one
                     if existing_entries and self._token_info == existing_token:
                         _LOGGER.debug("Existing token failed, creating new token")
                         self._token_info = await validate_credentials(self.hass, user_input)
@@ -240,6 +228,47 @@ class EnodeConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
         errors: dict[str, str] = {}
 
         if user_input is not None:
+            self._interval_data = user_input
+            return await self.async_step_sensors()
+
+        data_schema = vol.Schema({
+            vol.Required(
+                CONF_UPDATE_INTERVAL,
+                default=DEFAULT_UPDATE_INTERVAL
+            ): vol.All(
+                cv.positive_int,
+                vol.Range(min=MIN_UPDATE_INTERVAL, max=MAX_UPDATE_INTERVAL),
+                description="update_interval_description"
+            ),
+            vol.Required(
+                CONF_DEBUG_NOTIFICATIONS,
+                default=DEFAULT_DEBUG_NOTIFICATIONS
+            ): bool
+        })
+
+        return self.async_show_form(
+            step_id="interval",
+            data_schema=data_schema,
+            description_placeholders={
+                "min_value": str(MIN_UPDATE_INTERVAL),
+                "max_value": str(MAX_UPDATE_INTERVAL),
+                "default_value": str(DEFAULT_UPDATE_INTERVAL),
+                "debug_help": "Aktiver for at få detaljerede notifikationer til fejlfinding"
+            },
+            errors=errors
+        )
+
+    async def async_step_sensors(
+        self, user_input: dict[str, Any] | None = None
+    ) -> FlowResult:
+        """Handle sensor selection."""
+        errors: dict[str, str] = {}
+
+        if user_input is not None:
+            # Always include required sensors
+            selected_sensors = list(set(user_input.get(CONF_SELECTED_SENSORS, []) + 
+                                     ["token_renewal", "vehicle_information"]))
+            
             vehicle_info = self._vehicle.get('information', {})
             title = f"Enode {vehicle_info.get('displayName', 'Vehicle')}"
             
@@ -252,31 +281,20 @@ class EnodeConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
                     CONF_VEHICLE_ID: self._vehicle["id"],
                 },
                 options={
-                    CONF_UPDATE_INTERVAL: user_input[CONF_UPDATE_INTERVAL],
-                    CONF_DEBUG_NOTIFICATIONS: user_input[CONF_DEBUG_NOTIFICATIONS]
+                    CONF_UPDATE_INTERVAL: self._interval_data[CONF_UPDATE_INTERVAL],
+                    CONF_DEBUG_NOTIFICATIONS: self._interval_data[CONF_DEBUG_NOTIFICATIONS],
+                    CONF_SELECTED_SENSORS: selected_sensors
                 }
             )
 
+        sensors = {k: v for k, v in AVAILABLE_SENSORS.items()}
+        
         return self.async_show_form(
-            step_id="interval",
+            step_id="sensors",
             data_schema=vol.Schema({
-                vol.Required(
-                    CONF_UPDATE_INTERVAL,
-                    default=DEFAULT_UPDATE_INTERVAL
-                ): vol.All(
-                    cv.positive_int,
-                    vol.Range(min=MIN_UPDATE_INTERVAL, max=MAX_UPDATE_INTERVAL)
-                ),
-                vol.Required(
-                    CONF_DEBUG_NOTIFICATIONS,
-                    default=DEFAULT_DEBUG_NOTIFICATIONS
-                ): bool
+                vol.Required(CONF_SELECTED_SENSORS, 
+                           default=list(sensors.keys())): cv.multi_select(sensors)
             }),
-            description_placeholders={
-                "min_interval": str(MIN_UPDATE_INTERVAL),
-                "max_interval": str(MAX_UPDATE_INTERVAL),
-                "default_interval": str(DEFAULT_UPDATE_INTERVAL),
-            },
             errors=errors
         )
 
@@ -286,6 +304,18 @@ class EnodeOptionsFlow(config_entries.OptionsFlow):
     def __init__(self, config_entry: config_entries.ConfigEntry) -> None:
         """Initialize options flow."""
         self._config_entry = config_entry
+        self._current_interval = config_entry.options.get(
+            CONF_UPDATE_INTERVAL,
+            DEFAULT_UPDATE_INTERVAL
+        )
+        self._current_debug = config_entry.options.get(
+            CONF_DEBUG_NOTIFICATIONS,
+            DEFAULT_DEBUG_NOTIFICATIONS
+        )
+        self._current_sensors = config_entry.options.get(
+            CONF_SELECTED_SENSORS,
+            DEFAULT_SELECTED_SENSORS
+        )
 
     async def async_step_init(
         self, user_input: dict[str, Any] | None = None
@@ -295,52 +325,55 @@ class EnodeOptionsFlow(config_entries.OptionsFlow):
 
         if user_input is not None:
             try:
-                # Validate the input before saving
                 update_interval = user_input[CONF_UPDATE_INTERVAL]
                 if not MIN_UPDATE_INTERVAL <= update_interval <= MAX_UPDATE_INTERVAL:
                     errors["base"] = "invalid_update_interval"
                 else:
-                    # Everything is valid, save the new options
+                    # Always include required sensors
+                    selected_sensors = list(set(user_input.get(CONF_SELECTED_SENSORS, []) + 
+                                             ["token_renewal", "vehicle_information"]))
+                    
                     return self.async_create_entry(
                         title="",
                         data={
                             CONF_UPDATE_INTERVAL: update_interval,
-                            CONF_DEBUG_NOTIFICATIONS: user_input[CONF_DEBUG_NOTIFICATIONS]
+                            CONF_DEBUG_NOTIFICATIONS: user_input[CONF_DEBUG_NOTIFICATIONS],
+                            CONF_SELECTED_SENSORS: selected_sensors
                         }
                     )
             except Exception:
                 _LOGGER.exception("Unexpected error saving options")
                 errors["base"] = "unknown"
 
-        # Get current settings from options
-        current_interval = self._config_entry.options.get(
-            CONF_UPDATE_INTERVAL,
-            DEFAULT_UPDATE_INTERVAL
-        )
-        current_debug = self._config_entry.options.get(
-            CONF_DEBUG_NOTIFICATIONS,
-            DEFAULT_DEBUG_NOTIFICATIONS
-        )
+        sensors = {k: v for k, v in AVAILABLE_SENSORS.items()}
+        
+        data_schema = vol.Schema({
+            vol.Required(
+                CONF_UPDATE_INTERVAL,
+                default=self._current_interval
+            ): vol.All(
+                cv.positive_int,
+                vol.Range(min=MIN_UPDATE_INTERVAL, max=MAX_UPDATE_INTERVAL),
+                description="update_interval_description"
+            ),
+            vol.Required(
+                CONF_DEBUG_NOTIFICATIONS,
+                default=self._current_debug
+            ): bool,
+            vol.Required(
+                CONF_SELECTED_SENSORS,
+                default=self._current_sensors
+            ): cv.multi_select(sensors)
+        })
 
         return self.async_show_form(
             step_id="init",
-            data_schema=vol.Schema({
-                vol.Required(
-                    CONF_UPDATE_INTERVAL,
-                    default=current_interval
-                ): vol.All(
-                    cv.positive_int,
-                    vol.Range(min=MIN_UPDATE_INTERVAL, max=MAX_UPDATE_INTERVAL)
-                ),
-                vol.Required(
-                    CONF_DEBUG_NOTIFICATIONS,
-                    default=current_debug
-                ): bool
-            }),
+            data_schema=data_schema,
             description_placeholders={
                 "min_value": str(MIN_UPDATE_INTERVAL),
                 "max_value": str(MAX_UPDATE_INTERVAL),
-                "default_value": str(DEFAULT_UPDATE_INTERVAL),
+                "current_value": str(self._current_interval),
+                "debug_help": "Aktiver for at få detaljerede notifikationer til fejlfinding"
             },
-            errors=errors,
+            errors=errors
         )

@@ -28,8 +28,10 @@ from .const import (
     CONF_VEHICLE_ID,
     CONF_UPDATE_INTERVAL,
     CONF_DEBUG_NOTIFICATIONS,
+    CONF_SELECTED_SENSORS,
     DEFAULT_UPDATE_INTERVAL,
     DEFAULT_DEBUG_NOTIFICATIONS,
+    DEFAULT_SELECTED_SENSORS,
     DEBUG_NOTIFICATION_INTERVAL,
     PLATFORMS,
     OAUTH_URL,
@@ -53,14 +55,17 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     """Set up Enode from a config entry."""
     integration_id = entry.data[CONF_INTEGRATION_ID]
     
-    # Add debug option if not exists
-    if entry.options.get(CONF_DEBUG_NOTIFICATIONS) is None:
+    # Ensure default options exist
+    options_update = {}
+    if CONF_DEBUG_NOTIFICATIONS not in entry.options:
+        options_update[CONF_DEBUG_NOTIFICATIONS] = DEFAULT_DEBUG_NOTIFICATIONS
+    if CONF_SELECTED_SENSORS not in entry.options:
+        options_update[CONF_SELECTED_SENSORS] = DEFAULT_SELECTED_SENSORS
+    
+    if options_update:
         hass.config_entries.async_update_entry(
             entry,
-            options={
-                **entry.options,
-                CONF_DEBUG_NOTIFICATIONS: DEFAULT_DEBUG_NOTIFICATIONS
-            }
+            options={**entry.options, **options_update}
         )
     
     if DOMAIN not in hass.data:
@@ -168,6 +173,10 @@ class EnodeCoordinator(DataUpdateCoordinator):
         self._debug_enabled = entry.options.get(
             CONF_DEBUG_NOTIFICATIONS, 
             DEFAULT_DEBUG_NOTIFICATIONS
+        )
+        self.selected_sensors = entry.options.get(
+            CONF_SELECTED_SENSORS,
+            DEFAULT_SELECTED_SENSORS
         )
 
     @property

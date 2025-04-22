@@ -2,6 +2,7 @@
 from __future__ import annotations
 from datetime import datetime, timezone
 import logging
+from typing import Any
 
 from homeassistant.components.sensor import (
     SensorEntity,
@@ -28,6 +29,7 @@ from .const import (
     CONF_INTEGRATION_ID,
     CONF_VEHICLE_ID,
     CONF_CLIENT_ID,
+    CONF_SELECTED_SENSORS,
 )
 
 _LOGGER = logging.getLogger(__name__)
@@ -49,6 +51,7 @@ async def async_setup_entry(
 
     vehicle_id = coordinator.vehicle_id
     vehicle_data = coordinator.data
+    selected_sensors = coordinator.selected_sensors
     
     _LOGGER.debug(
         "Setting up sensors for vehicle %s (%s %s)",
@@ -57,17 +60,28 @@ async def async_setup_entry(
         vehicle_data.get("information", {}).get("model", "Unknown")
     )
     
-    sensors = [
-        EnodeBatteryLevelSensor(coordinator, vehicle_id),
-        EnodeBatteryCapacitySensor(coordinator, vehicle_id),
-        EnodeRangeSensor(coordinator, vehicle_id),
-        EnodeChargeRateSensor(coordinator, vehicle_id),
-        EnodeChargeTimeRemainingSensor(coordinator, vehicle_id),
-        EnodeOdometerSensor(coordinator, vehicle_id),
-        EnodeChargeLimitSensor(coordinator, vehicle_id),
-        EnodeLastSeenSensor(coordinator, vehicle_id),
-        EnodeTokenRenewalSensor(coordinator, vehicle_id, entry.entry_id),
-    ]
+    # Create a mapping of sensor types to their classes
+    sensor_classes = {
+        "battery_level": EnodeBatteryLevelSensor,
+        "battery_capacity": EnodeBatteryCapacitySensor,
+        "range": EnodeRangeSensor,
+        "charge_rate": EnodeChargeRateSensor,
+        "charge_time_remaining": EnodeChargeTimeRemainingSensor,
+        "odometer": EnodeOdometerSensor,
+        "charge_limit": EnodeChargeLimitSensor,
+        "last_seen": EnodeLastSeenSensor,
+        "token_renewal": EnodeTokenRenewalSensor,
+        "vehicle_information": EnodeVehicleInfoSensor,
+    }
+
+    # Initialize the sensors that are selected
+    sensors = []
+    for sensor_type, sensor_class in sensor_classes.items():
+        if sensor_type in selected_sensors:
+            if sensor_type == "token_renewal":
+                sensors.append(sensor_class(coordinator, vehicle_id, entry.entry_id))
+            else:
+                sensors.append(sensor_class(coordinator, vehicle_id))
 
     async_add_entities(sensors, update_before_add=True)
 
@@ -241,6 +255,50 @@ class EnodeLastSeenSensor(EnodeSensorBase):
             return None
         return dt_util.parse_datetime(last_seen)
 
+class EnodeVehicleInfoSensor(EnodeSensorBase):
+    """Representation of an Enode vehicle information sensor."""
+
+    _attr_name = "Vehicle Info"
+    _attr_icon = "mdi:car-info"
+
+    def __init__(self, coordinator, vehicle_id):
+        """Initialize the sensor."""
+        super().__init__(coordinator, vehicle_id)
+        self._attr_unique_id = f"{vehicle_id}_vehicle_info"
+        self._attr_extra_state_attributes = {}
+        self._last_refresh_time = None
+
+    @property
+    def native_value(self) -> str:
+        """Return the display name as the main value."""
+        info = self.coordinator.data.get("information", {})
+        return info.get("displayName", "Unknown")
+
+    @property
+    def extra_state_attributes(self) -> dict[str, Any]:
+        """Return the state attributes."""
+        data = self.coordinator.data
+        info = data.get("information", {})
+        odometer = data.get("odometer", {})
+        
+        last_seen = None
+        if data.get("lastSeen"):
+            last_seen = dt_util.parse_datetime(data["lastSeen"])
+
+        if self.coordinator.last_update_success:
+            self._last_refresh_time = dt_util.utcnow()
+        
+        return {
+            "display_name": info.get("displayName"),
+            "brand": info.get("brand"),
+            "model": info.get("model"),
+            "year": str(info.get("year")),
+            "vin": info.get("vin"),
+            "odometer": f"{odometer.get('distance')} {UnitOfLength.KILOMETERS}" if odometer.get("distance") is not None else None,
+            "last_seen": last_seen.isoformat() if last_seen else None,
+            "last_refresh": self._last_refresh_time.isoformat() if self._last_refresh_time else None,
+        }
+
 class EnodeTokenRenewalSensor(EnodeSensorBase):
     """Representation of a token renewal sensor."""
     
@@ -301,7 +359,7 @@ class EnodeTokenRenewalSensor(EnodeSensorBase):
             "scheduled": dt_util.as_local(
                 datetime.fromtimestamp(next_renewal, tz=timezone.utc)
             ).strftime("%Y-%m-%d %H:%M:%S"),
-           "shared_across_vehicles": True,
+            "shared_across_vehicles": True,
             "vehicle_count": vehicle_count,
             "vehicles_using_token": [
                 entry.data.get(CONF_VEHICLE_ID)

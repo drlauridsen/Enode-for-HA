@@ -11,7 +11,10 @@ from homeassistant.core import HomeAssistant
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from homeassistant.helpers.update_coordinator import CoordinatorEntity
 
-from .const import DOMAIN
+from .const import (
+    DOMAIN,
+    CONF_SELECTED_SENSORS,
+)
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -28,7 +31,11 @@ async def async_setup_entry(
         return
 
     vehicle_id = coordinator.vehicle_id
-    async_add_entities([EnodeDeviceTracker(coordinator, vehicle_id)])
+    selected_sensors = coordinator.selected_sensors
+
+    # Only create the device tracker if it's selected
+    if "location" in selected_sensors:
+        async_add_entities([EnodeDeviceTracker(coordinator, vehicle_id)])
 
 
 class EnodeDeviceTracker(CoordinatorEntity, TrackerEntity):
@@ -50,14 +57,17 @@ class EnodeDeviceTracker(CoordinatorEntity, TrackerEntity):
 
     @property
     def latitude(self):
+        """Return latitude value of the device."""
         return self.coordinator.data.get("location", {}).get("latitude") or 0.0
 
     @property
     def longitude(self):
+        """Return longitude value of the device."""
         return self.coordinator.data.get("location", {}).get("longitude") or 0.0
 
     @property
     def location_accuracy(self):
+        """Return the gps accuracy of the device."""
         return self.coordinator.data.get("location", {}).get("accuracy") or 0.0
 
     @property

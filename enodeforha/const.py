@@ -59,13 +59,54 @@ CONF_VEHICLE_ID = "vehicle_id"
 CONF_VEHICLE_IDS = "vehicle_ids"
 CONF_ENVIRONMENT = "environment"
 CONF_UPDATE_INTERVAL = "update_interval"
-DEFAULT_UPDATE_INTERVAL = 30  # seconds
-MIN_UPDATE_INTERVAL = 15  # seconds
+DEFAULT_UPDATE_INTERVAL = 60  # seconds
+MIN_UPDATE_INTERVAL = 5  # seconds
 MAX_UPDATE_INTERVAL = 3600  # seconds (60 minutes)
 CONF_INTEGRATION_ID = "integration_id"  # Unique ID for the integration instance
 # Token configuration
 TOKEN_VALIDITY_PERIOD = 3600  # Token is valid for 1 hour (in seconds)
 TOKEN_EXPIRY_BUFFER = 300    # Renew 5 minutes before expiry (in seconds)
+
+CONF_SELECTED_SENSORS = "selected_sensors"
+DEFAULT_SELECTED_SENSORS = [
+    "token_renewal",  # Always enabled
+    "vehicle_information",  # Always enabled
+    "battery_capacity",
+    "battery_level",
+    "charge_limit",
+    "charge_rate",
+    "charge_time_remaining",
+    "charging",
+    "fully_charged",
+    "last_seen",
+    "odometer",
+    "plugged_in",
+    "power_delivery",
+    "range",
+    "reachable",
+    "charge_control",
+    "smart_charging",
+    "location"
+]
+
+AVAILABLE_SENSORS = {
+    "battery_capacity": "Battery Capacity",
+    "battery_level": "Battery Level",
+    "charge_limit": "Charge Limit",
+    "charge_rate": "Charge Rate",
+    "charge_time_remaining": "Charge Time Remaining",
+    "charging": "Charging",
+    "fully_charged": "Fully Charged",
+    "last_seen": "Last Seen",
+    "odometer": "Odometer",
+    "plugged_in": "Plugged In",
+    "power_delivery": "Power Delivery",
+    "range": "Range",
+    "reachable": "Reachable",
+    "charge_control": "Charge Control",
+    "smart_charging": "Smart Charging",
+    "location": "Location"
+}
 
 @dataclass
 class EnodeSensorEntityDescription:
@@ -126,6 +167,12 @@ SENSOR_TYPES: tuple[EnodeSensorEntityDescription, ...] = (
         name="Last Seen",
         value_key="lastSeen",
         device_class=SensorDeviceClass.TIMESTAMP,
+    ),
+    EnodeSensorEntityDescription(
+        key="vehicle_info",
+        name="Vehicle Info",
+        value_key="information",
+        icon="mdi:car-info",
     ),
 )
 

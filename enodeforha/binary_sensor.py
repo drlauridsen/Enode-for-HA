@@ -11,7 +11,10 @@ from homeassistant.core import HomeAssistant
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from homeassistant.helpers.update_coordinator import CoordinatorEntity
 
-from .const import DOMAIN
+from .const import (
+    DOMAIN,
+    CONF_SELECTED_SENSORS,
+)
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -32,6 +35,7 @@ async def async_setup_entry(
 
     vehicle_id = coordinator.vehicle_id
     vehicle_data = coordinator.data
+    selected_sensors = coordinator.selected_sensors
     
     _LOGGER.debug(
         "Setting up binary sensors for vehicle %s (%s %s)",
@@ -40,13 +44,20 @@ async def async_setup_entry(
         vehicle_data.get("information", {}).get("model", "Unknown")
     )
 
-    binary_sensors = [
-        EnodePluggedInBinarySensor(coordinator, vehicle_id),
-        EnodeChargingBinarySensor(coordinator, vehicle_id),
-        EnodeFullyChargedBinarySensor(coordinator, vehicle_id),
-        EnodeReachableBinarySensor(coordinator, vehicle_id),
-        EnodePowerDeliveryBinarySensor(coordinator, vehicle_id),
-    ]
+    # Create a mapping of binary sensor types to their classes
+    binary_sensor_classes = {
+        "plugged_in": EnodePluggedInBinarySensor,
+        "charging": EnodeChargingBinarySensor,
+        "fully_charged": EnodeFullyChargedBinarySensor,
+        "reachable": EnodeReachableBinarySensor,
+        "power_delivery": EnodePowerDeliveryBinarySensor,
+    }
+
+    # Initialize only the selected binary sensors
+    binary_sensors = []
+    for sensor_type, sensor_class in binary_sensor_classes.items():
+        if sensor_type in selected_sensors:
+            binary_sensors.append(sensor_class(coordinator, vehicle_id))
 
     async_add_entities(binary_sensors)
 

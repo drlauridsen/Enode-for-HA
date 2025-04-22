@@ -1,11 +1,11 @@
 """Switch platform for Enode integration."""
-# Updated: 2025-04-13 15:31:54 by drlauridsen
 
 from __future__ import annotations
 
 from typing import Any
 import logging
 from datetime import datetime, timezone
+import aiohttp
 
 from homeassistant.components.switch import SwitchEntity
 from homeassistant.config_entries import ConfigEntry
@@ -24,7 +24,8 @@ from .const import (
     API_CHARGING,
     CONF_ACCESS_TOKEN,
     CONF_CLIENT_ID,
-    CONF_CLIENT_SECRET
+    CONF_CLIENT_SECRET,
+    CONF_SELECTED_SENSORS
 )
 
 _LOGGER = logging.getLogger(__name__)
@@ -57,14 +58,17 @@ async def async_setup_entry(
 
     vehicle_id = coordinator.vehicle_id
     vehicle_data = coordinator.data
+    selected_sensors = coordinator.selected_sensors
     
     switches = []
     capabilities = vehicle_data.get("capabilities", {})
     
-    if capabilities.get("smartCharging", {}).get("isCapable", False):
+    if (capabilities.get("smartCharging", {}).get("isCapable", False) and 
+        "smart_charging" in selected_sensors):
         switches.append(EnodeSmartChargingSwitch(coordinator, vehicle_id))
     
-    if capabilities.get("startCharging", {}).get("isCapable", False):
+    if (capabilities.get("startCharging", {}).get("isCapable", False) and 
+        "charge_control" in selected_sensors):
         switches.append(EnodeChargeControlSwitch(coordinator, vehicle_id))
     
     async_add_entities(switches)
