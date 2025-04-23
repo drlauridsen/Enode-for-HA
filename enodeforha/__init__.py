@@ -19,7 +19,7 @@ from homeassistant.helpers.update_coordinator import (
     UpdateFailed
 )
 from homeassistant.helpers import event
-
+from homeassistant.helpers import config_validation as cv
 from .const import (
     DOMAIN,
     API_BASE_URL,
@@ -38,6 +38,8 @@ from .const import (
     CONF_INTEGRATION_ID,
     TOKEN_EXPIRY_BUFFER,
 )
+
+CONFIG_SCHEMA = cv.config_entry_only_config_schema(DOMAIN)
 
 _LOGGER = logging.getLogger(__name__)
 
