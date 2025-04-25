@@ -39,7 +39,7 @@ def get_oauth_url(environment: Environment) -> str:
 
 DOMAIN = "enodeforha"
 PLATFORMS = ["sensor", "binary_sensor", "switch", "device_tracker"]
-
+CONF_DISPLAY_NAME = "display_name"
 CONF_DEBUG_NOTIFICATIONS = "debug_notifications"
 DEFAULT_DEBUG_NOTIFICATIONS = False
 DEBUG_NOTIFICATION_INTERVAL = 600  # 10 minutes in seconds

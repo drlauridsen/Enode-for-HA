@@ -294,6 +294,8 @@ class EnodeVehicleInfoSensor(EnodeSensorBase):
             "model": info.get("model"),
             "year": str(info.get("year")),
             "vin": info.get("vin"),
+            "Enode id": data.get("id"),
+            "Vehicle id": self._vehicle_id,
             "odometer": f"{odometer.get('distance')} {UnitOfLength.KILOMETERS}" if odometer.get("distance") is not None else None,
             "last_seen": last_seen.isoformat() if last_seen else None,
             "last_refresh": self._last_refresh_time.isoformat() if self._last_refresh_time else None,

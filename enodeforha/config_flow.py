@@ -205,7 +205,7 @@ class EnodeConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
         }
 
         vehicle_options = {
-            v["id"]: f"{v.get('information', {}).get('displayName', 'Unknown')} ({v.get('information', {}).get('brand', 'Unknown')})"
+            v["id"]: f"{v.get('information', {}).get('brand', 'Unknown')} {v.get('information', {}).get('model', 'Unknown')} (VIN: {v.get('information', {}).get('vin', 'Unknown')})"
             for v in self._vehicles
             if v["id"] not in configured_vehicle_ids
         }
@@ -270,7 +270,7 @@ class EnodeConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
                                  ["token_renewal", "vehicle_information"]))
             
             vehicle_info = self._vehicle.get('information', {})
-            title = f"Enode {vehicle_info.get('displayName', 'Vehicle')}"
+            title = f"{vehicle_info.get('brand', 'Vehicle')} {vehicle_info.get('model', 'Vehicle')}"
             
             return self.async_create_entry(
                 title=title,

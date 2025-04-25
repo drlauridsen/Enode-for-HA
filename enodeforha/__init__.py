@@ -307,7 +307,8 @@ class EnodeCoordinator(DataUpdateCoordinator):
                     )
                     self._last_debug_notification = now
 
-            # Update device info
+            #Old code for sandbox testing, production api does not provide displayName key/value
+            """# Update device info
             info = vehicle_data.get('information', {})
             self._device_info = {
                 self.vehicle_id: DeviceInfo(
@@ -318,8 +319,40 @@ class EnodeCoordinator(DataUpdateCoordinator):
                     hw_version=str(info.get('year')) if info.get('year') else 'Unknown',
                     serial_number=info.get('vin') if info.get('vin') else 'Unknown',
                 )
-            }
+            }"""
+
+
+            # Handle displayName and create a consistent identifier
+            info = vehicle_data.get('information', {})
+            display_name = info.get('displayName', "Displayname not present in json result") #Enode does not provide displayname key/value for all devices
+            brand = info.get('brand', 'Unknown brand')
+            model = info.get('model', 'Unknown model')
+            vin = info.get('vin', 'Unknown VIN')
+            short_vin = info.get('vin', 'Unknown VIN')[-8:]  # Use last 8 chars of VIN for brevity
+            enodeid = vehicle_data.get('id', 'Unknown ID')
+
+            # Create unique identifiers
+            vehicle_identifier = f"{brand} {model} ({short_vin})" #this will be the displayed device name in HA and a part of all entity names
+            sensor_unique_identifier = f"{brand}_{model}_{vin}".replace(" ", "_") #not used yet, but can be used for entity_id generation
             
+            # Create a displayname if displayName is not present #not used yet
+            if display_name != "Displayname not present in json result" or display_name != "Unknown" or display_name != "" or display_name != "None":
+                name_by_user = display_name
+            else:
+                name_by_user = f"{brand} {model}"
+
+            # Update device info with consistent naming
+            self._device_info = {
+                self.vehicle_id: DeviceInfo(
+                identifiers={(DOMAIN, self.vehicle_id)},
+                name=vehicle_identifier,  # Use our constructed identifier
+                manufacturer=brand,
+                model=model,
+                hw_version=str(info.get('year')) if info.get('year') else 'Unknown', #HA does not support device attribute modelyear so we use the hw_version attribute
+                serial_number=vin if vin != 'Unknown' else 'Unknown', #HA does not support device atrribute VIN so we use the serial number attribute
+                )
+            }
+
             return vehicle_data
 
         except aiohttp.ClientError as err:

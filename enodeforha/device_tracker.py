@@ -44,15 +44,14 @@ class EnodeDeviceTracker(CoordinatorEntity, TrackerEntity):
     _attr_has_entity_name = False
     _attr_should_poll = False
     _attr_source_type = SourceType.GPS
+    _attr_icon = "mdi:crosshairs-gps"
 
     def __init__(self, coordinator, vehicle_id):
         """Initialize the tracker."""
         super().__init__(coordinator)
         self._vehicle_id = vehicle_id
         self._attr_unique_id = f"{vehicle_id}_tracker"
-        self._attr_name = coordinator.data.get("information", {}).get(
-            "displayName", f"Vehicle {vehicle_id[:8]}"
-        )
+        self._attr_name = f"{coordinator.data.get('information', {}).get('brand', f'Vehicle {vehicle_id[:8]}')} {coordinator.data.get('information', {}).get('model', 'Unknown model')} {coordinator.data.get('information', {}).get('vin', 'Unknown VIN')[-8:]}"
         self._attr_device_info = coordinator.device_info.get(vehicle_id)
 
     @property
