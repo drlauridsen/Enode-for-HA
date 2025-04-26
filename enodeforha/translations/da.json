@@ -29,7 +29,7 @@
                     "update_interval": "Opdateringsinterval (sekunder)",
                     "debug_notifications": "Fejlfindingsnotifikationer"
                 },
-                "description": "Konfigurer hvor ofte køretøjsdata skal opdateres. Minimum: {min_value} sekunder, Maksimum: {max_value} sekunder, Standard: {default_value} sekunder.",
+                "description": "Konfigurer hvor ofte køretøjsdata skal opdateres.\nMinimum: {min_value} sekunder\n Maksimum: {max_value} sekunder\n Standard: {default_value} sekunder.\n\nKan også ændres efter oprettelse af køretøjet.",
                 "title": "Konfigurationsmuligheder"
             }
         }
