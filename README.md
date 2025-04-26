@@ -1,5 +1,5 @@
 # Enode-for-HA
-Enode vehicle custom integration for Homeassistant
+A custom integration for Homeassistant, to access Enodes API for vehicles. Other devices/assets than vehicles, are not supported by the integration.
 
 Inspired by https://github.com/OldSmurf56/xpeng but I have chosen to make a custom integration instead of using nodered.
 
@@ -11,9 +11,10 @@ The initial setup described by oldsmurf56 is basically the same, I have however 
 
 Enode setup
 1) Create an enode account.
-2) Ask sales for production access (you can test the integration with the sandbox environment by changing the environment in const.py to "sandbox", until you get production access)
-3) Have your enode credentials ready, and use either the instructions here https://developers.enode.com/docs/getting-started or use my simplified process here https://lauridsen.nl/enode/enodelink.php to get the link to the linksession between your vehicles app account and enode. The php file is also uploaded here, so that you can see the code, and can use it in your own webserver if you prefer for privacy concerns.
-4) Use the generated url to link your vehicle to enode within 24 hours.
+2) Ask Enode sales for production access, you will not be able to connect to real devices without. If they accept, you will get access to a limited amount of assets/devices.
+You can test the integration with the sandbox environment by changing the environment in const.py to "sandbox".
+4) Have your enode credentials ready, and use either the instructions here https://developers.enode.com/docs/getting-started or use my simplified process here https://lauridsen.nl/enode/enodelink.php to get the link to the linksession between your vehicles app account and enode. The php file is also uploaded here, so that you can see the code, and can use it in your own webserver if you prefer for privacy concerns.
+5) Use the generated url to link your vehicle to enode within 24 hours.
 
 How to install the custom integration in homeassistant
 1) Copy full repository directory enodeforha to your homeassistant custom_components folder
