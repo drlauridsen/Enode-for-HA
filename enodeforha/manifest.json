@@ -9,5 +9,5 @@
   "iot_class": "cloud_polling",
   "issue_tracker": "https://github.com/drlauridsen/Enode-for-HA/issues",
   "requirements": ["aiohttp"],
-  "version": "0.8"
+  "version": "0.8.1"
 }

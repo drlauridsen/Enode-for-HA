@@ -115,7 +115,8 @@ class EnodeFullyChargedBinarySensor(EnodeBinarySensorBase):
     """Representation of an Enode fully charged binary sensor."""
 
     _attr_name = "Fully charged"
-    _attr_device_class = BinarySensorDeviceClass.BATTERY
+    _attr_device_class = None  # No special device class
+    #_attr_icon = "mdi:battery-charging-100"  # Custom icon for clarity
 
     def __init__(self, coordinator, vehicle_id):
         """Initialize the binary sensor."""
@@ -124,9 +125,11 @@ class EnodeFullyChargedBinarySensor(EnodeBinarySensorBase):
 
     @property
     def is_on(self) -> bool | None:
-        """Return true if the binary sensor is on."""
+        """Return true when fully charged (direct non-inverted logic)."""
         charge_state = self.coordinator.data.get("chargeState")
-        return charge_state.get("isFullyCharged") if charge_state else None
+        if charge_state:
+            return charge_state.get("isFullyCharged", False)
+        return None
 
 class EnodeReachableBinarySensor(EnodeBinarySensorBase):
     """Representation of an Enode reachable binary sensor."""

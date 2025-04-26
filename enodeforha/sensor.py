@@ -272,7 +272,7 @@ class EnodeVehicleInfoSensor(EnodeSensorBase):
     def native_value(self) -> str:
         """Return the display name as the main value."""
         info = self.coordinator.data.get("information", {})
-        return info.get("displayName", "Unknown")
+        return info.get("displayName") or f"{info.get("brand")} {info.get("model")}"
 
     @property
     def extra_state_attributes(self) -> dict[str, Any]:
@@ -289,7 +289,7 @@ class EnodeVehicleInfoSensor(EnodeSensorBase):
             self._last_refresh_time = dt_util.utcnow()
         
         return {
-            "display_name": info.get("displayName"),
+            "display_name": info.get("displayName") or f"{info.get("brand")} {info.get("model")}",
             "brand": info.get("brand"),
             "model": info.get("model"),
             "year": str(info.get("year")),
